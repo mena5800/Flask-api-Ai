@@ -1,0 +1,44 @@
+---
+- name: deploy ml model
+  hosts: ml_deploy
+  tasks:
+    - name: copy file
+      copy:
+        src: "./app"
+        dest: "/root/"
+
+    - name: add deadsnakes ppa
+      apt_repository:
+        repo: "ppa:deadsnakes/ppa"
+        state: present
+    
+    - name: update cache
+      apt:
+        update_cache: yes
+    
+    - name: install python3.11
+      package:
+        name: python3.11-full
+        state: present
+
+    - name: Create virtual environment
+      command: python3.11 -m venv /root/myenv
+      args:
+        creates: /root/myenv
+
+    - name: Activate virtual environment and install requirements
+      shell: |
+        source /root/myenv/bin/activate
+        pip3.11 install -r /root/app/requirements.txt
+      args:
+        executable: /bin/bash
+
+    - name: Download file
+      get_url:
+        url: "https://drive.google.com/uc?id=1ZHVO0s7q9qSr8EKv6P8GXsQzGHozzuu2"
+        dest: "/root/app/model.keras"
+
+    - name: Run app.py
+      shell: nohup /root/myenv/bin/python3.11 /root/app/app.py > /dev/null 2>&1 &
+
+...
